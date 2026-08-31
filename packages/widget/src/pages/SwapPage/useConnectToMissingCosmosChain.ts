@@ -7,7 +7,7 @@ import {
 } from "@/hooks/useCreateCosmosWallets";
 import { sourceAssetAtom } from "@/state/swapPage";
 import { walletsAtom } from "@/state/wallets";
-import { WalletType, getWallet, connect, getChainInfo } from "graz";
+import { WalletType, getWallet, connect, getChainInfo, isWalletConnect } from "graz";
 
 export const useConnectToMissingCosmosChain = () => {
   const sourceAsset = useAtomValue(sourceAssetAtom);
@@ -37,13 +37,19 @@ export const useConnectToMissingCosmosChain = () => {
       try {
         const chainInfo = getChainInfo({ chainId: sourceAsset.chainId });
         if (chainInfo) {
-          await wallet.experimentalSuggestChain(chainInfo);
+          if (!isWalletConnect(walletName)) {
+            await wallet.experimentalSuggestChain(chainInfo);
+          }
 
-          await connect({
+          const response = await connect({
             chainId: sourceAsset.chainId,
             walletType: walletName,
             autoReconnect: false,
           });
+
+          if (!response.accounts[sourceAsset.chainId]) {
+            throw new Error(`Wallet did not approve ${sourceAsset.chainId}`);
+          }
 
           addExtraChainIdsToConnectForWalletType({
             walletName,
