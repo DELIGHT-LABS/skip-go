@@ -21,8 +21,7 @@ export const useConnectToMissingCosmosChain = () => {
   );
 
   const [isAskingToApproveConnection, setIsAskingToApproveConnection] = useState(false);
-  const connectingChainIdRef = useRef<string | undefined>(undefined);
-  const attemptedWalletConnectChainRef = useRef<string | undefined>(undefined);
+  const previousSourceChainIdRef = useRef(sourceAsset?.chainId);
 
   const addExtraChainIdsToConnectForWalletType = useSetAtom(
     addExtraChainIdsToConnectForWalletTypeAtom,
@@ -31,11 +30,10 @@ export const useConnectToMissingCosmosChain = () => {
   useEffect(() => {
     const connectToMissingCosmosChain = async () => {
       const walletName = wallets?.cosmos?.walletName as WalletType | undefined;
+      const previousSourceChainId = previousSourceChainIdRef.current;
+      previousSourceChainIdRef.current = sourceAsset?.chainId;
 
-      if (!sourceAsset?.chainId || !walletName || sourceAsset.isEvm || sourceAsset.isSvm) {
-        if (!walletName) attemptedWalletConnectChainRef.current = undefined;
-        return;
-      }
+      if (!sourceAsset?.chainId || !walletName || sourceAsset.isEvm || sourceAsset.isSvm) return;
 
       const wallet = getWallet(walletName);
       const additionalChainIds = extraChainIdsToConnect[walletName] ?? [];
@@ -48,12 +46,9 @@ export const useConnectToMissingCosmosChain = () => {
           : chainIdsToConnect.includes(sourceAsset.chainId)
       )
         return;
-      if (!walletConnect) attemptedWalletConnectChainRef.current = undefined;
-      if (walletConnect && attemptedWalletConnectChainRef.current === sourceAsset.chainId) return;
-      if (connectingChainIdRef.current === sourceAsset.chainId) return;
+      if (walletConnect && (!previousSourceChainId || previousSourceChainId === sourceAsset.chainId))
+        return;
 
-      if (walletConnect) attemptedWalletConnectChainRef.current = sourceAsset.chainId;
-      connectingChainIdRef.current = sourceAsset.chainId;
       setIsAskingToApproveConnection(true);
 
       try {
@@ -86,9 +81,6 @@ export const useConnectToMissingCosmosChain = () => {
           errorMessage: error instanceof Error ? error.message : String(error),
         });
       } finally {
-        if (connectingChainIdRef.current === sourceAsset.chainId) {
-          connectingChainIdRef.current = undefined;
-        }
         setIsAskingToApproveConnection(false);
       }
     };

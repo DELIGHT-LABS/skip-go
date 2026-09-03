@@ -49,6 +49,7 @@ import { useConnectToMissingCosmosChain } from "./useConnectToMissingCosmosChain
 
 describe("useConnectToMissingCosmosChain", () => {
   beforeEach(() => {
+    mocks.sourceAsset = { chainId: "osmosis-1", isEvm: false, isSvm: false };
     mocks.wallets = { cosmos: { walletName: "walletconnect" } };
     mocks.accounts = undefined;
     mocks.connect.mockReset();
@@ -59,9 +60,35 @@ describe("useConnectToMissingCosmosChain", () => {
     });
   });
 
-  it("does not reopen a proposal for the same chain after partial approval", async () => {
+  it("does not open another proposal when the initial connection completes", async () => {
+    mocks.wallets = {};
     const { rerender } = renderHook(() => useConnectToMissingCosmosChain());
 
+    expect(mocks.connect).not.toHaveBeenCalled();
+
+    mocks.accounts = {
+      "dimension_37-1": { bech32Address: "xpla1approved" },
+    };
+    mocks.wallets = { cosmos: { walletName: "walletconnect" } };
+    await act(async () => {
+      rerender();
+      await Promise.resolve();
+    });
+
+    expect(mocks.connect).not.toHaveBeenCalled();
+  });
+
+  it("does not reopen a proposal for the same chain after partial approval", async () => {
+    mocks.sourceAsset = { chainId: "dimension_37-1", isEvm: false, isSvm: false };
+    mocks.accounts = {
+      "dimension_37-1": { bech32Address: "xpla1approved" },
+    };
+    const { rerender } = renderHook(() => useConnectToMissingCosmosChain());
+
+    expect(mocks.connect).not.toHaveBeenCalled();
+
+    mocks.sourceAsset = { chainId: "osmosis-1", isEvm: false, isSvm: false };
+    rerender();
     await waitFor(() => expect(mocks.connect).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(mocks.track).toHaveBeenCalledTimes(1));
 
@@ -76,14 +103,27 @@ describe("useConnectToMissingCosmosChain", () => {
     expect(mocks.connect).toHaveBeenCalledTimes(1);
   });
 
-  it("allows a new proposal after the wallet is disconnected", async () => {
+  it("waits for another source selection after the wallet reconnects", async () => {
+    mocks.sourceAsset = { chainId: "dimension_37-1", isEvm: false, isSvm: false };
+    mocks.accounts = {
+      "dimension_37-1": { bech32Address: "xpla1approved" },
+    };
     const { rerender } = renderHook(() => useConnectToMissingCosmosChain());
 
+    expect(mocks.connect).not.toHaveBeenCalled();
+
+    mocks.sourceAsset = { chainId: "osmosis-1", isEvm: false, isSvm: false };
+    rerender();
     await waitFor(() => expect(mocks.connect).toHaveBeenCalledTimes(1));
 
     mocks.wallets = {};
     rerender();
     mocks.wallets = { cosmos: { walletName: "walletconnect" } };
+    rerender();
+
+    expect(mocks.connect).toHaveBeenCalledTimes(1);
+
+    mocks.sourceAsset = { chainId: "juno-1", isEvm: false, isSvm: false };
     rerender();
 
     await waitFor(() => expect(mocks.connect).toHaveBeenCalledTimes(2));
