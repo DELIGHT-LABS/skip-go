@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
+import { track } from "@amplitude/analytics-browser";
+import { ChainType } from "@skip-go/client";
 import {
   extraCosmosChainIdsToConnectPerWalletAtom,
   addExtraChainIdsToConnectForWalletTypeAtom,
@@ -19,6 +21,8 @@ export const useConnectToMissingCosmosChain = () => {
   );
 
   const [isAskingToApproveConnection, setIsAskingToApproveConnection] = useState(false);
+  const connectingChainIdRef = useRef<string | undefined>(undefined);
+  const attemptedWalletConnectChainRef = useRef<string | undefined>(undefined);
 
   const addExtraChainIdsToConnectForWalletType = useSetAtom(
     addExtraChainIdsToConnectForWalletTypeAtom,
@@ -28,25 +32,34 @@ export const useConnectToMissingCosmosChain = () => {
     const connectToMissingCosmosChain = async () => {
       const walletName = wallets?.cosmos?.walletName as WalletType | undefined;
 
-      if (!sourceAsset?.chainId || !walletName || sourceAsset.isEvm || sourceAsset.isSvm) return;
+      if (!sourceAsset?.chainId || !walletName || sourceAsset.isEvm || sourceAsset.isSvm) {
+        if (!walletName) attemptedWalletConnectChainRef.current = undefined;
+        return;
+      }
 
       const wallet = getWallet(walletName);
       const additionalChainIds = extraChainIdsToConnect[walletName] ?? [];
       const chainIdsToConnect = [...getInitialChainIds(walletName), ...additionalChainIds];
+      const walletConnect = isWalletConnect(walletName);
 
       if (
-        isWalletConnect(walletName)
+        walletConnect
           ? accounts?.[sourceAsset.chainId]
           : chainIdsToConnect.includes(sourceAsset.chainId)
       )
         return;
+      if (!walletConnect) attemptedWalletConnectChainRef.current = undefined;
+      if (walletConnect && attemptedWalletConnectChainRef.current === sourceAsset.chainId) return;
+      if (connectingChainIdRef.current === sourceAsset.chainId) return;
 
+      if (walletConnect) attemptedWalletConnectChainRef.current = sourceAsset.chainId;
+      connectingChainIdRef.current = sourceAsset.chainId;
       setIsAskingToApproveConnection(true);
 
       try {
         const chainInfo = getChainInfo({ chainId: sourceAsset.chainId });
         if (chainInfo) {
-          if (!isWalletConnect(walletName)) {
+          if (!walletConnect) {
             await wallet.experimentalSuggestChain(chainInfo);
           }
 
@@ -65,12 +78,22 @@ export const useConnectToMissingCosmosChain = () => {
             chainId: sourceAsset.chainId,
           });
         }
+      } catch (error) {
+        track("connect wallet error", {
+          walletName,
+          chainId: sourceAsset.chainId,
+          ChainType: ChainType.Cosmos,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
       } finally {
+        if (connectingChainIdRef.current === sourceAsset.chainId) {
+          connectingChainIdRef.current = undefined;
+        }
         setIsAskingToApproveConnection(false);
       }
     };
 
-    connectToMissingCosmosChain();
+    void connectToMissingCosmosChain();
   }, [
     sourceAsset,
     wallets,
