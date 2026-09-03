@@ -7,12 +7,16 @@ import {
 } from "@/hooks/useCreateCosmosWallets";
 import { sourceAssetAtom } from "@/state/swapPage";
 import { walletsAtom } from "@/state/wallets";
-import { WalletType, getWallet, connect, getChainInfo, isWalletConnect } from "graz";
+import { WalletType, getWallet, connect, getChainInfo, isWalletConnect, useAccount } from "graz";
 
 export const useConnectToMissingCosmosChain = () => {
   const sourceAsset = useAtomValue(sourceAssetAtom);
   const wallets = useAtomValue(walletsAtom);
   const extraChainIdsToConnect = useAtomValue(extraCosmosChainIdsToConnectPerWalletAtom);
+  const { data: accounts } = useAccount();
+  const hasApprovedSourceAccount = Boolean(
+    sourceAsset?.chainId && accounts?.[sourceAsset.chainId],
+  );
 
   const [isAskingToApproveConnection, setIsAskingToApproveConnection] = useState(false);
 
@@ -30,7 +34,12 @@ export const useConnectToMissingCosmosChain = () => {
       const additionalChainIds = extraChainIdsToConnect[walletName] ?? [];
       const chainIdsToConnect = [...getInitialChainIds(walletName), ...additionalChainIds];
 
-      if (chainIdsToConnect.includes(sourceAsset.chainId)) return;
+      if (
+        isWalletConnect(walletName)
+          ? accounts?.[sourceAsset.chainId]
+          : chainIdsToConnect.includes(sourceAsset.chainId)
+      )
+        return;
 
       setIsAskingToApproveConnection(true);
 
@@ -62,7 +71,13 @@ export const useConnectToMissingCosmosChain = () => {
     };
 
     connectToMissingCosmosChain();
-  }, [sourceAsset, wallets, extraChainIdsToConnect, addExtraChainIdsToConnectForWalletType]);
+  }, [
+    sourceAsset,
+    wallets,
+    extraChainIdsToConnect,
+    accounts,
+    addExtraChainIdsToConnectForWalletType,
+  ]);
 
-  return { isAskingToApproveConnection };
+  return { hasApprovedSourceAccount, isAskingToApproveConnection };
 };
