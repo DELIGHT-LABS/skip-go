@@ -150,3 +150,22 @@ This section records the local validation setup at that date, not production dep
 The widget treats Graz as an external dependency. The app therefore uses its directly installed Graz package at runtime. Subscription recovery observed in the app must not be assumed to exist in the development workspace's different Graz tarball.
 
 The commit cleanup preserved the tested app installation without repackaging or reinstalling it. Local tarballs are POC reproduction artifacts and are not intended for the production PR.
+
+## Trimmed-Scope Validation Snapshot (2026-09-09)
+
+The previous section records the September 8 installation. In this snapshot, both Skip Go and Skip Go App use `.graz-poc/graz-approved-scope-trimmed-842a792-0.6.0.tgz`. The widget/client tarballs listed above are retained, and the app source is unchanged.
+
+- Each repository's previous state is preserved on its `backup/wc-approved-scope-before-trim-20260909` branch.
+- The mixed-field conflict rejection from Graz commit `1e53f82` is excluded because no actual wallet response established the need for it.
+- The pre-RPC resubscription and fresh-session exception from `4f944e4` are excluded because their independent need after the client-lifecycle fix was not verified.
+- Approved namespace and standard account normalization, client retention, initialization/disconnect deduplication, protection against late store writes after timeout, approved-key reuse for signing, and persisted-byte restoration are retained.
+- No unrelated cleanup or additional defensive logic is included. This snapshot does not repair a missing subscription immediately before an RPC.
+
+At the time of this snapshot, mobile-wallet E2E success for the trimmed version had not yet been confirmed. The planned manual checks before updating the Graz PR were:
+
+1. Connect an XPLA-only wallet and enter a Noble destination address manually; confirm that no automatic QR prompt appears.
+2. Confirm that the first and second signing requests in the same session both reach the wallet and complete.
+3. Refresh the page and verify account restoration and signing.
+4. Verify disconnect/reconnect, Chrome and Safari, and the Keplr WalletConnect path.
+
+If subscription loss recurs, compare against the backup and isolate the cause. Do not restore pre-RPC resubscription to the PR without reproduction evidence.
