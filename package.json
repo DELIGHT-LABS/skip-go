@@ -94,7 +94,7 @@
     "wagmi": "^2.14.1"
   },
   "resolutions": {
-    "graz": "file:./.graz-poc/graz-approved-scope-03232b6-0.6.0.tgz",
+    "graz": "file:./.graz-poc/graz-approved-scope-persisted-key-fix-1e53f82-0.6.0.tgz",
     "viem": "2.38.6"
   },
   "packageManager": "yarn@3.2.0",

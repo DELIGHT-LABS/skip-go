@@ -19831,9 +19831,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"graz@file:./.graz-poc/graz-approved-scope-03232b6-0.6.0.tgz::locator=skip-go%40workspace%3A.":
+"graz@file:./.graz-poc/graz-approved-scope-persisted-key-fix-1e53f82-0.6.0.tgz::locator=skip-go%40workspace%3A.":
   version: 0.6.0
-  resolution: "graz@file:./.graz-poc/graz-approved-scope-03232b6-0.6.0.tgz::locator=skip-go%40workspace%3A."
+  resolution: "graz@file:./.graz-poc/graz-approved-scope-persisted-key-fix-1e53f82-0.6.0.tgz::locator=skip-go%40workspace%3A."
   dependencies:
     "@cosmsnap/snapper": 0.2.7
     "@dao-dao/cosmiframe": 1.0.0
@@ -19859,7 +19859,7 @@ __metadata:
       optional: true
   bin:
     graz: ./dist/cli.js
-  checksum: c46073cbe7dc2ed94ee13297f40491549b32857d5c2943c76436e140db254a844e7bd3d38ce1eabcc8e6717c8077772d9af9f5b31bc0fefb3150da0fcda72fd6
+  checksum: 9d88de48a9e3ca68199fa2936e878f804277f572dd32f7af35f07dc3aa681e38425e0848e941c5eff6fc8bae80be5673af0fc80b978ec6b74ab5ad49c821bc1d
   languageName: node
   linkType: hard
 
