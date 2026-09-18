@@ -29087,6 +29087,7 @@ __metadata:
     graz: 0.7.0
     jest: ^29.7.0
     jest-environment-jsdom: ^29.7.0
+    jsdom: ^20.0.0
     keccak256: 1.x
     minimatch: ^9.0.3
     msw: ^1.2.3
