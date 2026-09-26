@@ -51,6 +51,7 @@ export const useGasRouteAutoSetAddress = () => {
         if (!feeRoute || !isFeeRouteEnabled) return;
         const requiredChainAddresses = feeRoute.requiredChainAddresses;
         if (!requiredChainAddresses) return;
+        let hasOpenedModal = false;
         Object.entries(gasRouteChainAddresses).forEach(async ([_index, chainAddress], index) => {
           if (!chainAddress.address || chainAddress.address === "") {
             const injectedAddress = connectedAddress?.[chainAddress.chainId];
@@ -97,11 +98,12 @@ export const useGasRouteAutoSetAddress = () => {
                       : undefined,
                   } as ChainAddress,
                 }));
-              } else if (openModal) {
+              } else if (openModal && !hasOpenedModal) {
+                hasOpenedModal = true;
                 NiceModal.show(Modals.SetAddressModal, {
                   chainId: chainAddress.chainId,
                   chainAddressIndex: index,
-                  isFeeRoute: true,
+                  isGasRoute: true,
                 });
               }
             }
